@@ -1,0 +1,21 @@
+---
+- name: Assert peer endpoint is supplied by the caller
+  ansible.builtin.assert:
+    that:
+      - vault_integration_oidc_endpoint | length > 0
+    fail_msg: "vault_integration_oidc_endpoint must be supplied by the caller; integrations never discover peers."
+  tags:
+    - oidc_auth
+
+- name: Record caller-supplied integration secret presence (never retrieved here)
+  ansible.builtin.set_fact:
+    vault_integration_oidc_client_secret_present: "{{ vault_integration_oidc_client_secret | length > 0 }}"
+  no_log: true
+  tags:
+    - oidc_auth
+
+- name: Scaffold wiring placeholder
+  ansible.builtin.debug:
+    msg: "Scaffold for oidc_auth: wire vault to the peer at {{ vault_integration_oidc_endpoint }}."
+  tags:
+    - oidc_auth

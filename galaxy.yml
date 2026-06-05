@@ -1,0 +1,20 @@
+---
+namespace: blueprints
+name: vault_integrations
+version: 0.1.0
+readme: README.md
+authors:
+  - Platform Engineering
+description: "Optional integrations that wire Vault to existing peers (OIDC, LDAP)."
+license:
+  - MIT
+tags:
+  - security
+  - blueprints
+  - vault
+repository: https://github.com/iac-foundry/ansible-collection-vault_integrations
+dependencies: {}
+build_ignore:
+  - .github
+  - "*.tar.gz"
+  - extensions

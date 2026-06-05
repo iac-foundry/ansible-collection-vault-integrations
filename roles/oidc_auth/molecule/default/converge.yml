@@ -1,0 +1,10 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Include blueprints.vault_integrations.oidc_auth with caller-supplied variables
+      ansible.builtin.include_role:
+        name: blueprints.vault_integrations.oidc_auth
+      vars:
+        vault_integration_oidc_endpoint: "https://example.invalid"
