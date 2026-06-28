@@ -1,17 +1,41 @@
 ---
 argument_specs:
   main:
-    short_description: "ldap_auth integration for vault."
+    short_description: "vault_agent integration for vault."
     options:
-      vault_integration_ldap_endpoint:
+      vault_integration_vault_endpoint:
         type: str
         required: true
-        description: Peer endpoint/issuer/URL (caller-supplied; never discovered).
-      vault_integration_ldap_client_id:
+        description: Vault HTTPS URL (caller-supplied; never discovered).
+      vault_integration_vault_role_id:
         type: str
-        default: ""
-        description: Client identifier for the peer.
-      vault_integration_ldap_client_secret:
+        required: true
+        description: AppRole role_id from Vault (caller-supplied; never discovered).
+      vault_integration_vault_secret_id:
         type: str
-        default: ""
-        description: Caller-supplied client secret; never retrieved by this role.
+        required: true
+        description: AppRole secret_id from Vault (caller-supplied; never discovered).
+      vault_agent_config_dir:
+        type: str
+        default: "/etc/vault-agent"
+        description: Directory for the rendered agent.hcl configuration and AppRole credential files.
+      vault_agent_cache_dir:
+        type: str
+        default: "/var/lib/vault-agent"
+        description: Directory used for the Vault Agent auto-auth token sink/cache.
+      vault_agent_socket_path:
+        type: str
+        default: "/run/vault-agent/agent.sock"
+        description: Unix socket path the agent listens on for local consumers.
+      vault_agent_listen_port:
+        type: int
+        default: 8200
+        description: TCP port checked for readiness once the agent is started.
+      vault_agent_binary_path:
+        type: str
+        default: "/usr/local/bin/vault"
+        description: Path to the vault binary used to run the agent (systemd ExecStart).
+      vault_agent_log_level:
+        type: str
+        default: "info"
+        description: Log level passed to the rendered Vault Agent configuration.
