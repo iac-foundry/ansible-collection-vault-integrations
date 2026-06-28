@@ -1,0 +1,42 @@
+pid_file = "/var/run/vault-agent.pid"
+log_level = "{{ vault_agent_log_level }}"
+
+vault {
+  address = "{{ vault_integration_vault_endpoint }}"
+}
+
+auto_auth {
+  method {
+    type = "approle"
+
+    config = {
+      role_id_file_path = "{{ vault_agent_config_dir }}/role_id"
+      secret_id_file_path = "{{ vault_agent_config_dir }}/secret_id"
+      remove_secret_id_file_after_reading = false
+    }
+  }
+
+  sink {
+    type = "file"
+    config = {
+      path = "{{ vault_agent_cache_dir }}/auth_token"
+      mode = 0600
+    }
+  }
+}
+
+cache {
+  use_auto_auth_token = true
+  enforce_consistency = "always"
+  when_inconsistent = "retry"
+}
+
+listener "unix" {
+  address = "{{ vault_agent_socket_path }}"
+  tls_disable = true
+}
+
+listener "tcp" {
+  address = "127.0.0.1:8200"
+  tls_disable = true
+}
