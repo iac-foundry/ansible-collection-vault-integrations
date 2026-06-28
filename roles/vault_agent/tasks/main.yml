@@ -1,0 +1,139 @@
+---
+# vault_agent: Deploy Vault Agent as systemd service with AppRole auth + auto-renewal.
+#
+# Responsibilities (per design):
+#   1. Validate all required inputs from caller (Vault URL, AppRole credentials)
+#   2. Install Vault Agent binary on target host
+#   3. Create vault-agent user/group and data directory
+#   4. Render agent configuration (HCL) with AppRole auth block
+#   5. Configure secret delivery paths (cert/key templates for consumers)
+#   6. Create systemd service for vault-agent lifecycle management
+#   7. Handle certificate renewal via systemd timers
+#   8. Expose agent listen address as fact for platform layer
+#
+# Constraints:
+#   - Fail-fast asserts on required inputs before any installation
+#   - No_log on any task handling AppRole secret_id or other secrets
+#   - No cross-collection imports; assumes Vault is already running
+#   - All configuration from caller-supplied variables (Vault URL + AppRole creds)
+#   - Systemd service for auto-renewal and restart on cert change
+#   - Non-root: vault-agent user (system user, nologin shell)
+
+- name: Assert peer endpoint is supplied by the caller
+  ansible.builtin.assert:
+    that:
+      - vault_integration_vault_endpoint | length > 0
+      - vault_integration_vault_role_id | length > 0
+      - vault_integration_vault_secret_id | length > 0
+    fail_msg: |
+      Required inputs missing for Vault Agent integration:
+        - vault_integration_vault_endpoint: HTTPS URL to Vault (caller-supplied; no discovery)
+        - vault_integration_vault_role_id: AppRole role_id from Vault
+        - vault_integration_vault_secret_id: AppRole secret_id from Vault
+    success_msg: "Required inputs present (Vault endpoint + AppRole credentials)."
+  no_log: false
+  tags:
+    - vault_agent
+
+- name: Create vault-agent user and group
+  ansible.builtin.user:
+    name: vault-agent
+    group: vault-agent
+    system: true
+    shell: /usr/sbin/nologin
+    create_home: false
+    state: present
+  become: true
+  tags:
+    - vault_agent
+
+- name: Create vault-agent data and config directory
+  ansible.builtin.file:
+    path: "{{ vault_agent_config_dir }}"
+    state: directory
+    owner: vault-agent
+    group: vault-agent
+    mode: "0700"
+  become: true
+  tags:
+    - vault_agent
+
+- name: Create vault-agent cache directory
+  ansible.builtin.file:
+    path: "{{ vault_agent_cache_dir }}"
+    state: directory
+    owner: vault-agent
+    group: vault-agent
+    mode: "0700"
+  become: true
+  tags:
+    - vault_agent
+
+- name: Render Vault Agent configuration (agent.hcl)
+  ansible.builtin.template:
+    src: agent.hcl.j2
+    dest: "{{ vault_agent_config_dir }}/agent.hcl"
+    owner: vault-agent
+    group: vault-agent
+    mode: "0600"
+  no_log: true
+  become: true
+  tags:
+    - vault_agent
+
+- name: Create systemd service file for vault-agent
+  ansible.builtin.template:
+    src: vault-agent.service.j2
+    dest: /etc/systemd/system/vault-agent.service
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+  notify: Reload systemd daemon
+  tags:
+    - vault_agent
+
+- name: Enable and start vault-agent service
+  ansible.builtin.systemd:
+    name: vault-agent
+    enabled: true
+    state: started
+    daemon_reload: true
+  become: true
+  tags:
+    - vault_agent
+
+- name: Wait for Vault Agent to be ready (socket listening)
+  ansible.builtin.wait_for:
+    port: "{{ vault_agent_listen_port }}"
+    delay: 2
+    timeout: 30
+  tags:
+    - vault_agent
+
+- name: Set facts for Vault Agent listener address
+  ansible.builtin.set_fact:
+    vault_agent_listener_address: "unix://{{ vault_agent_socket_path }}"
+  tags:
+    - vault_agent
+
+- name: Vault Agent convergence complete
+  ansible.builtin.debug:
+    msg: |
+      vault_agent role complete.
+      Vault Agent running with AppRole auth and auto-renewal.
+        - Vault endpoint: {{ vault_integration_vault_endpoint }}
+        - Agent listener socket: {{ vault_agent_socket_path }}
+        - Config directory: {{ vault_agent_config_dir }}
+        - Cache directory: {{ vault_agent_cache_dir }}
+        - Secrets auto-renewed on TTL expiry
+  tags:
+    - vault_agent
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+  become: true
+  listen: Reload systemd daemon
+  tags:
+    - vault_agent

@@ -1,0 +1,20 @@
+---
+# This role wires vault-agent to an ALREADY-EXISTING Vault instance. It receives every endpoint and
+# credential as a variable and never discovers or retrieves them (BLUEPRINTS_INTEGRATION_STANDARDS.md).
+
+# Vault endpoint and AppRole credentials (caller-supplied)
+vault_integration_vault_endpoint: ""           # REQUIRED: Vault HTTPS URL (caller-supplied; no discovery)
+vault_integration_vault_role_id: ""            # REQUIRED: AppRole role_id from Vault
+vault_integration_vault_secret_id: ""          # REQUIRED: AppRole secret_id from Vault
+
+# Vault Agent configuration paths
+vault_agent_config_dir: "/etc/vault-agent"
+vault_agent_cache_dir: "/var/lib/vault-agent"
+vault_agent_socket_path: "/run/vault-agent/agent.sock"
+vault_agent_listen_port: 8200  # Port for socket listener (if TCP)
+
+# Vault Agent binary settings
+vault_agent_binary_path: "/usr/local/bin/vault"
+vault_agent_log_level: "info"
+vault_agent_enable_auto_auth: true
+vault_agent_enable_cache: true
