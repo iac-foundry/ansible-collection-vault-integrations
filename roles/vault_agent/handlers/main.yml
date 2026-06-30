@@ -1,0 +1,7 @@
+---
+# Handlers for blueprints.vault_integrations.vault_agent
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+  become: true
+  listen: Reload systemd daemon

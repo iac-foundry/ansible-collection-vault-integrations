@@ -130,10 +130,8 @@
   tags:
     - vault_agent
 
-- name: Reload systemd daemon
-  ansible.builtin.systemd:
-    daemon_reload: true
-  become: true
-  listen: Reload systemd daemon
-  tags:
-    - vault_agent
+# NOTE: the "Reload systemd daemon" handler lives in handlers/main.yml,
+# where `listen` and handler semantics are valid. It was previously here
+# in tasks/main.yml with a `listen:` attribute, which is only valid on a
+# handler -- Ansible rejected the whole play with "'listen' is not a valid
+# attribute for a Task". Task at line ~92 notifies it by name.
