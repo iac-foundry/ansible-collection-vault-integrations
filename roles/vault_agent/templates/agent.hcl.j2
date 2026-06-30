@@ -1,4 +1,8 @@
-pid_file = "/var/run/vault-agent.pid"
+{# /var/run is a root-owned symlink to /run; the non-root vault-agent user
+   cannot create a pid file directly there ("permission denied"). Write it
+   inside the systemd RuntimeDirectory (/run/vault-agent), which is owned by
+   the service user. #}
+pid_file = "{{ vault_agent_socket_path | dirname }}/vault-agent.pid"
 log_level = "{{ vault_agent_log_level }}"
 
 vault {
