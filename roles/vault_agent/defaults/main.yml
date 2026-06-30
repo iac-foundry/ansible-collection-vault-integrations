@@ -15,6 +15,11 @@ vault_agent_listen_port: 8200  # Port for socket listener (if TCP)
 
 # Vault Agent binary settings
 vault_agent_binary_path: "/usr/local/bin/vault"
+# The Vault Agent needs the `vault` binary present. If it is not already
+# installed at vault_agent_binary_path, the role downloads this version of
+# the official release (just the binary -- no apt package, so no native
+# vault.service or vault server user is created on the agent host).
+vault_agent_vault_version: "1.17.5"
 vault_agent_log_level: "info"
 vault_agent_enable_auto_auth: true
 vault_agent_enable_cache: true

@@ -35,6 +35,50 @@
   tags:
     - vault_agent
 
+# The systemd unit runs `{{ vault_agent_binary_path }} agent`, so the vault
+# binary must exist. The base host has no vault binary, so the service
+# failed to start with status=203/EXEC. Install just the official release
+# binary (no apt package -> no native vault.service or vault server user).
+- name: Check whether the vault binary already exists
+  ansible.builtin.stat:
+    path: "{{ vault_agent_binary_path }}"
+  register: _vault_agent_binary_stat
+  tags:
+    - vault_agent
+
+- name: Install the vault binary for the Vault Agent
+  when: not _vault_agent_binary_stat.stat.exists
+  become: true
+  tags:
+    - vault_agent
+  block:
+    - name: Ensure unzip is present (needed to extract the vault release)
+      ansible.builtin.apt:
+        name: unzip
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Determine the Debian architecture for the vault download
+      ansible.builtin.command: dpkg --print-architecture
+      register: _vault_agent_arch
+      changed_when: false
+
+    - name: Download the Vault {{ vault_agent_vault_version }} release zip
+      ansible.builtin.get_url:
+        url: "https://releases.hashicorp.com/vault/{{ vault_agent_vault_version }}/vault_{{ vault_agent_vault_version }}_linux_{{ _vault_agent_arch.stdout }}.zip"
+        dest: "/tmp/vault_{{ vault_agent_vault_version }}_{{ _vault_agent_arch.stdout }}.zip"
+        mode: "0644"
+
+    - name: Extract the vault binary into place
+      ansible.builtin.unarchive:
+        src: "/tmp/vault_{{ vault_agent_vault_version }}_{{ _vault_agent_arch.stdout }}.zip"
+        dest: "{{ vault_agent_binary_path | dirname }}"
+        remote_src: true
+        mode: "0755"
+        owner: root
+        group: root
+
 # ansible.builtin.user's `group:` sets the user's PRIMARY group, which
 # must already exist -- the user module does not create it. Without this
 # group task first, the play failed with "Group vault-agent does not

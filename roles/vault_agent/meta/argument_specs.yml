@@ -35,6 +35,10 @@ argument_specs:
         type: str
         default: "/usr/local/bin/vault"
         description: Path to the vault binary used to run the agent (systemd ExecStart).
+      vault_agent_vault_version:
+        type: str
+        default: "1.17.5"
+        description: Vault release version to download if the binary is not already present at vault_agent_binary_path.
       vault_agent_log_level:
         type: str
         default: "info"
