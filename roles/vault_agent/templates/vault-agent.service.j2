@@ -15,6 +15,15 @@ ExecReload=/bin/kill -HUP $MAINPID
 User=vault-agent
 Group=vault-agent
 
+# Create /run/vault-agent (the parent of vault_agent_socket_path) before
+# ExecStart, owned by the service user. Without it the agent's unix
+# listener failed with "bind: no such file or directory" -- /run is tmpfs
+# and the directory existed nowhere. RuntimeDirectory is the idiomatic
+# fix: systemd creates it on start (recreated each boot), unlike a one-off
+# mkdir in the role that would not survive a reboot.
+RuntimeDirectory={{ vault_agent_socket_path | dirname | basename }}
+RuntimeDirectoryMode=0750
+
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=vault-agent
