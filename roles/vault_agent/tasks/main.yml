@@ -35,7 +35,21 @@
   tags:
     - vault_agent
 
-- name: Create vault-agent user and group
+# ansible.builtin.user's `group:` sets the user's PRIMARY group, which
+# must already exist -- the user module does not create it. Without this
+# group task first, the play failed with "Group vault-agent does not
+# exist". Create the group explicitly, same pattern as the step-ca/vault
+# container_server roles.
+- name: Create vault-agent group
+  ansible.builtin.group:
+    name: vault-agent
+    system: true
+    state: present
+  become: true
+  tags:
+    - vault_agent
+
+- name: Create vault-agent user
   ansible.builtin.user:
     name: vault-agent
     group: vault-agent
